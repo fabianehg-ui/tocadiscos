@@ -185,7 +185,7 @@
   .newbar input{flex:1;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg-tint);color:var(--text);font-family:inherit;font-size:16px;outline:none}
   .newbar input:focus-visible{border-color:var(--accent)}
   .cards{display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1;max-height:min(56vh,560px)}
-  .card{display:grid;grid-template-columns:46px 1fr auto auto;gap:12px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:14px;cursor:pointer;transition:.12s}
+  .card{display:grid;grid-template-columns:46px 1fr auto auto auto;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:14px;cursor:pointer;transition:.12s}
   .card:hover{border-color:var(--accent);background:var(--surface-2)}
   .card .ci{width:46px;height:46px;border-radius:10px;display:grid;place-items:center;color:var(--on-accent);
     background:linear-gradient(150deg,var(--accent),var(--accent-strong))}
@@ -244,6 +244,16 @@
   .ytctl .ctl{font-size:22px;font-weight:700;color:var(--text)}
   .ytctl .ctl.play{font-size:20px;padding-left:2px}
   .ytnote{font-size:12px;color:var(--faint);line-height:1.5;text-align:center;margin:0 0 8px}
+  /* extras */
+  .viz{width:100%;height:46px;display:block;margin-top:14px;opacity:.95}
+  .np-act .sl{font-weight:700;color:var(--accent-strong)}
+  .np-act#sleep.on{color:var(--accent-strong);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+  .cbtn.share:hover{border-color:var(--accent);color:var(--accent-strong)}
+  .qrbox{display:flex;justify-content:center;margin:4px 0 12px;min-height:4px}
+  .qrbox img,.qrbox canvas{border-radius:10px;background:#fff;padding:8px}
+  .shareInput{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg-tint);
+    color:var(--text);font-family:"IBM Plex Mono",monospace;font-size:12px;margin-bottom:8px;outline:none}
+  .shareInput:focus-visible{border-color:var(--accent)}
   footer{margin-top:20px;text-align:center;color:var(--faint);font-size:12px;line-height:1.6}
   footer b{color:var(--muted);font-weight:600}
   @media (prefers-reduced-motion:reduce){.disc,.spin,.eq span{animation:none!important}.tonearm{transition:none}}
@@ -272,6 +282,7 @@
       <div class="np-actions">
         <button class="np-act fav" id="fav" title="Guardar en Favoritos"><span id="favIcon"></span> Favorito</button>
         <button class="np-act" id="addlist" title="Agregar a una lista">＋ Lista</button>
+        <button class="np-act" id="sleep" title="Temporizador de apagado">⏱ Dormir<span class="sl" id="sleepBadge"></span></button>
       </div>
       <div class="seek">
         <div class="bar" id="bar" tabindex="0" role="slider" aria-label="Progreso" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -287,6 +298,7 @@
         <button class="ctl" id="repeat" title="Repetir" aria-label="Repetir"></button>
       </div>
       <div class="vol"><span id="volIcon"></span><input type="range" id="vol" min="0" max="1" step="0.01" value="0.9" aria-label="Volumen"></div>
+      <canvas id="viz" class="viz" aria-hidden="true"></canvas>
     </section>
 
     <section class="panel lib">
@@ -372,9 +384,21 @@
     <button class="sheet-close" id="sheetClose">Cerrar</button>
   </div>
 </div>
+<div class="modal" id="shareModal" hidden>
+  <div class="sheet">
+    <div class="sheet-h">Compartir lista</div>
+    <div class="sheet-track" id="shareName"></div>
+    <div id="qr" class="qrbox"></div>
+    <input class="shareInput" id="shareUrl" readonly>
+    <button class="go" id="shareCopy" style="width:100%;margin-bottom:8px">Copiar enlace</button>
+    <p class="ytnote" id="shareNote" style="margin-top:0"></p>
+    <button class="sheet-close" id="shareClose">Cerrar</button>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <audio id="audio" crossorigin="anonymous"></audio>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
 (function(){
@@ -410,7 +434,8 @@
     mute:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M22 9l-5 6M17 9l5 6"/></svg>',
     playc:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>',
     trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>',
-    list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h11M4 12h11M4 17h7"/><circle cx="18" cy="16" r="3"/></svg>'
+    list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h11M4 12h11M4 17h7"/><circle cx="18" cy="16" r="3"/></svg>',
+    share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="17" cy="6" r="2.5"/><circle cx="17" cy="18" r="2.5"/><path d="M8.2 10.8l6.6-3.6M8.2 13.2l6.6 3.6"/></svg>'
   };
   $("#play").innerHTML=I.play;$("#prev").innerHTML=I.prev;$("#next").innerHTML=I.next;
   $("#shuffle").innerHTML=I.shuffle;$("#repeat").innerHTML=I.repeat;$("#volIcon").innerHTML=I.vol;$("#favIcon").innerHTML=I.heart;
@@ -691,8 +716,10 @@
       c.innerHTML='<span class="ci">'+I.list+'</span>'
         +'<span style="min-width:0"><span class="cn">'+esc(l.name)+'</span><br><span class="cc">'+l.tracks.length+' canción'+(l.tracks.length!==1?'es':'')+'</span></span>'
         +'<button class="cbtn play" title="Reproducir">'+I.playc+'</button>'
+        +'<button class="cbtn share" title="Compartir lista">'+I.share+'</button>'
         +'<button class="cbtn del" title="Eliminar lista">'+I.trash+'</button>';
       c.querySelector(".play").onclick=e=>{e.stopPropagation();openList(l.id);};
+      c.querySelector(".share").onclick=e=>{e.stopPropagation();openShare(l);};
       c.querySelector(".del").onclick=e=>{e.stopPropagation();
         if(l.tracks.length && !confirm('¿Eliminar la lista "'+l.name+'"?'))return;
         lists=lists.filter(x=>x.id!==l.id);if(l.id==="fav")lists.unshift({id:"fav",name:"Favoritos",tracks:[]});
@@ -787,9 +814,75 @@
   repeat=store.get("repeat","off");if(repeat!=="off"){$("#repeat").classList.add("on");if(repeat==="one")$("#repeat").classList.add("repeat-one");}
   vol.value=store.get("vol","0.9");applyVol();
 
+  // ---- visualizador (animado; no toca el audio para no romper streams) ----
+  const viz=$("#viz"),vctx=viz&&viz.getContext("2d");
+  const VN=44,vphase=[];let venergy=0,vcolA="#E99A48",vcolB="#B9660F",vframe=0;
+  for(let i=0;i<VN;i++)vphase.push({p:Math.random()*6.283,f:.5+Math.random()*1.7,a:.45+Math.random()*.55});
+  const reduceM=window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+  function vizColors(){const cs=getComputedStyle(document.documentElement);
+    vcolA=(cs.getPropertyValue("--accent")||"#E99A48").trim();vcolB=(cs.getPropertyValue("--accent-strong")||"#B9660F").trim();}
+  function vizResize(){if(!viz)return;const r=viz.getBoundingClientRect();const dpr=Math.min(devicePixelRatio||1,2);
+    viz.width=Math.max(1,Math.round(r.width*dpr));viz.height=Math.max(1,Math.round(r.height*dpr));}
+  function vizFrame(t){
+    if(!vctx)return;
+    if(vframe++%15===0)vizColors();
+    const W=viz.width,H=viz.height,gap=Math.max(1,W*0.004),bw=(W-(VN-1)*gap)/VN;
+    venergy+=((audio.paused?0:1)-venergy)*0.05;
+    vctx.clearRect(0,0,W,H);
+    for(let i=0;i<VN;i++){const ph=vphase[i];
+      let v=0.07+(0.55*Math.abs(Math.sin(t*0.0016*ph.f+ph.p))+0.35*Math.abs(Math.sin(t*0.0031*ph.f+i*0.6)))*ph.a*venergy;
+      v=Math.max(0.05,Math.min(1,v));const bh=v*H,x=i*(bw+gap),y=H-bh;
+      const g=vctx.createLinearGradient(0,H,0,y);g.addColorStop(0,vcolB);g.addColorStop(1,vcolA);vctx.fillStyle=g;
+      const rr=Math.min(bw/2,3*(devicePixelRatio||1));vctx.beginPath();
+      if(vctx.roundRect)vctx.roundRect(x,y,bw,bh,[rr,rr,0,0]);else vctx.rect(x,y,bw,bh);vctx.fill();}
+    if(!reduceM)requestAnimationFrame(vizFrame);
+  }
+  function vizStart(){if(!vctx)return;vizColors();vizResize();if(reduceM){venergy=.4;vizFrame(0);}else requestAnimationFrame(vizFrame);}
+  window.addEventListener("resize",()=>{vizResize();if(reduceM){venergy=.4;vizFrame(0);}});
+
+  // ---- temporizador de apagado ----
+  const SL=[0,15,30,45,60];let slIdx=0,slT=null;
+  $("#sleep").onclick=()=>{slIdx=(slIdx+1)%SL.length;const m=SL[slIdx];clearTimeout(slT);slT=null;const b=$("#sleep");
+    if(m===0){b.classList.remove("on");$("#sleepBadge").textContent="";toast("Temporizador apagado");}
+    else{b.classList.add("on");$("#sleepBadge").textContent=" · "+m+"m";
+      slT=setTimeout(()=>{audio.pause();if(typeof ytStop==="function")ytStop();b.classList.remove("on");$("#sleepBadge").textContent="";slIdx=0;toast("A dormir 😴 música pausada");},m*60000);
+      toast("Se apagará en "+m+" min");}};
+
+  // ---- compartir lista (enlace + QR) ----
+  function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+  function b64dec(s){return decodeURIComponent(escape(atob(s)));}
+  function encodeList(l){const mini={n:l.name,t:l.tracks.slice(0,40).map(t=>[t.title,t.artist,t.url])};
+    return "#lista="+encodeURIComponent(b64enc(JSON.stringify(mini)));}
+  function openShare(l){
+    if(!l.tracks.length){toast("La lista está vacía");return;}
+    const url=location.origin+location.pathname+encodeList(l);
+    $("#shareName").textContent=l.name+" · "+l.tracks.length+" canción"+(l.tracks.length!==1?"es":"");
+    $("#shareUrl").value=url;const qr=$("#qr");qr.innerHTML="";$("#shareNote").textContent="";
+    if(url.length>1900)$("#shareNote").textContent="La lista es larga; el QR puede no salir, pero el enlace sí sirve.";
+    else if(window.QRCode){try{new QRCode(qr,{text:url,width:200,height:200,correctLevel:QRCode.CorrectLevel.M});}catch(e){$("#shareNote").textContent="No se pudo generar el QR; usa el enlace.";}}
+    else $("#shareNote").textContent="Copia el enlace para compartir.";
+    if(l.tracks.length>40)$("#shareNote").textContent="Se comparten las primeras 40 canciones.";
+    $("#shareModal").hidden=false;
+  }
+  $("#shareClose").onclick=()=>{$("#shareModal").hidden=true;};
+  $("#shareModal").addEventListener("click",e=>{if(e.target===$("#shareModal"))$("#shareModal").hidden=true;});
+  $("#shareCopy").onclick=()=>{const i=$("#shareUrl");i.select();i.setSelectionRange(0,99999);
+    try{if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(i.value).then(()=>toast("Enlace copiado"),()=>{document.execCommand("copy");toast("Enlace copiado");});
+    else{document.execCommand("copy");toast("Enlace copiado");}}catch(e){toast("Copia el enlace manualmente");}};
+  function importFromHash(){
+    if(location.hash.indexOf("#lista=")!==0)return;
+    try{const mini=JSON.parse(b64dec(decodeURIComponent(location.hash.slice(7))));
+      if(mini&&mini.t&&mini.t.length){const id=newList(mini.n||"Lista compartida");
+        const l=lists.find(x=>x.id===id);l.tracks=mini.t.map(a=>({title:a[0],artist:a[1],url:a[2],cover:null}));saveLists();
+        if(history.replaceState)history.replaceState(null,"",location.pathname+location.search);
+        setTab("listas");toast("Lista “"+(mini.n||"compartida")+"” agregada");}
+    }catch(e){}
+  }
+
   // ---- arranque ----
-  setupMediaSession();
+  setupMediaSession();vizStart();
   curSrc="audius";selChip(0);curStation=0;runStation();
+  importFromHash();
 })();
 </script>
 <script>
