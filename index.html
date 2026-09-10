@@ -122,6 +122,11 @@
     padding:9px;border-radius:9px;cursor:pointer;transition:.14s;display:flex;align-items:center;justify-content:center;gap:7px}
   .tab svg{width:16px;height:16px}
   .tab.on{background:var(--surface);color:var(--accent-strong);box-shadow:var(--shadow-sm)}
+  .src{display:flex;gap:8px;margin-bottom:12px}
+  .srcb{flex:1;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);font:inherit;font-weight:700;
+    font-size:12.5px;padding:8px;border-radius:10px;cursor:pointer;transition:.14s}
+  .srcb:hover{border-color:var(--accent);color:var(--accent-strong)}
+  .srcb.on{background:color-mix(in srgb,var(--accent) 16%,transparent);border-color:var(--accent);color:var(--accent-strong)}
   .lib-top{display:flex;gap:10px;align-items:center;margin-bottom:12px}
   .search{flex:1;position:relative}
   .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--faint)}
@@ -222,6 +227,23 @@
     transition:opacity .2s,transform .2s;z-index:60;max-width:90vw}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+  /* YouTube */
+  .ytquick{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .ytquick button{padding:7px 12px;border-radius:99px;border:1px solid var(--line);background:var(--surface-2);
+    color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:.14s}
+  .ytquick button:hover{border-color:var(--accent);color:var(--accent-strong)}
+  .ytwrap{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;margin-bottom:12px}
+  .ytwrap #ytplayer,.ytwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .ytph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    text-align:center;color:#d9cfd7;padding:20px;background:linear-gradient(160deg,#241c2b,#14101a);pointer-events:none}
+  .ytph span{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--on-accent);font-size:22px;padding-left:3px}
+  .ytph p{font-size:13px;line-height:1.5;max-width:34ch;margin:0}
+  .yttitle{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:15px;text-align:center;margin-bottom:10px;min-height:19px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ytctl{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px}
+  .ytctl .ctl{font-size:22px;font-weight:700;color:var(--text)}
+  .ytctl .ctl.play{font-size:20px;padding-left:2px}
+  .ytnote{font-size:12px;color:var(--faint);line-height:1.5;text-align:center;margin:0 0 8px}
   footer{margin-top:20px;text-align:center;color:var(--faint);font-size:12px;line-height:1.6}
   footer b{color:var(--muted);font-weight:600}
   @media (prefers-reduced-motion:reduce){.disc,.spin,.eq span{animation:none!important}.tonearm{transition:none}}
@@ -271,14 +293,19 @@
       <div class="tabs">
         <button class="tab on" id="tabExplorar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Explorar</button>
         <button class="tab" id="tabListas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h11M4 12h11M4 18h7"/><path d="M19 15v6M22 18h-6" transform="translate(-1 -1)"/></svg>Mis listas</button>
+        <button class="tab" id="tabYt"><svg viewBox="0 0 24 24" fill="none"><rect x="2.5" y="5.5" width="19" height="13" rx="4" fill="currentColor"/><path d="M10 9.2l5 2.8-5 2.8z" fill="var(--surface)"/></svg>YouTube</button>
       </div>
 
       <!-- EXPLORAR -->
       <div id="browseArea">
+        <div class="src">
+          <button class="srcb on" data-src="audius">Audius · moderno</button>
+          <button class="srcb" data-src="archivo">Archivo clásico</button>
+        </div>
         <div class="lib-top">
           <label class="search">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-            <input type="text" id="q" placeholder="Buscar (vallenato, salsa, bolero…)" aria-label="Buscar">
+            <input type="text" id="q" placeholder="Buscar en Audius (artista o canción)…" aria-label="Buscar">
           </label>
           <button class="go" id="goBtn">Buscar</button>
         </div>
@@ -305,11 +332,30 @@
         </div>
         <div class="cards" id="cards"></div>
       </div>
+
+      <!-- YOUTUBE -->
+      <div id="ytArea" hidden>
+        <div class="newbar">
+          <input type="text" id="ytUrl" placeholder="Pega el enlace de YouTube (canción o playlist)…" aria-label="Enlace de YouTube">
+          <button class="go" id="ytPlayBtn">▶ Reproducir</button>
+        </div>
+        <div class="ytquick" id="ytquick"></div>
+        <div class="ytwrap"><div id="ytplayer"></div>
+          <div class="ytph" id="ytph"><span>▶</span><p>Pega un enlace de YouTube arriba y dale Reproducir.<br>O usa un botón de género para buscar y copiar un enlace.</p></div>
+        </div>
+        <div class="yttitle" id="ytTitle"></div>
+        <div class="ytctl">
+          <button class="ctl" id="ytPrev" title="Anterior (en playlist)">‹</button>
+          <button class="ctl play" id="ytToggle" title="Reproducir / Pausar">▶</button>
+          <button class="ctl" id="ytNext" title="Siguiente (en playlist)">›</button>
+        </div>
+        <p class="ytnote">Reproduce con el reproductor y los anuncios de YouTube. En el celular, con la pantalla bloqueada el video se pausa (así funciona YouTube sin Premium).</p>
+      </div>
     </section>
   </div>
 
   <footer>
-    <b>Tocadiscos Nube</b> · música libre y de dominio público desde Internet Archive. Requiere internet.<br>
+    <b>Tocadiscos Nube</b> · música libre desde Audius e Internet Archive. Requiere internet.<br>
     Tus listas se guardan en este dispositivo. Atajos: <b>Espacio</b> · <b>N/P</b> · <b>← →</b> · <b>↑ ↓</b>
   </footer>
 </div>
@@ -369,23 +415,34 @@
   $("#play").innerHTML=I.play;$("#prev").innerHTML=I.prev;$("#next").innerHTML=I.next;
   $("#shuffle").innerHTML=I.shuffle;$("#repeat").innerHTML=I.repeat;$("#volIcon").innerHTML=I.vol;$("#favIcon").innerHTML=I.heart;
 
-  // ---- estaciones colombianas / en español ----
+  // ---- estaciones latinas / colombianas (dos fuentes) ----
+  // aud = término de búsqueda en Audius (moderno) · ia = consulta en Internet Archive (clásico)
   const STATIONS=[
-    {label:"Cumbia",q:'mediatype:audio AND cumbia'},
-    {label:"Vallenato",q:'mediatype:audio AND (vallenato OR acordeón OR acordeon)'},
-    {label:"Salsa",q:'mediatype:audio AND (salsa OR guaracha OR "son montuno")'},
-    {label:"Tropical / Porro",q:'mediatype:audio AND (tropical OR porro OR gaita OR merengue)'},
-    {label:"Despecho / Cantina",q:'mediatype:audio AND (despecho OR cantina OR carrilera)'},
-    {label:"Popular / Ranchera",q:'mediatype:audio AND ("musica popular" OR ranchera OR corrido)'},
-    {label:"Bolero / Romántica",q:'mediatype:audio AND (bolero OR romántica OR romantica)'},
-    {label:"Carranga / Andina",q:'mediatype:audio AND (carranga OR guasca OR "musica andina" OR tiple)'},
-    {label:"Tango",q:'mediatype:audio AND (tango OR milonga)'},
-    {label:"En español",q:'mediatype:audio AND (español OR canción OR cancion OR spanish)'}
+    {label:"Cumbia",aud:"cumbia",ia:'mediatype:audio AND cumbia'},
+    {label:"Vallenato",aud:"vallenato",ia:'mediatype:audio AND (vallenato OR acordeón OR acordeon)'},
+    {label:"Salsa",aud:"salsa",ia:'mediatype:audio AND (salsa OR guaracha OR "son montuno")'},
+    {label:"Reggaetón",aud:"reggaeton",ia:'mediatype:audio AND (reggaeton OR reggaetón)'},
+    {label:"Champeta",aud:"champeta",ia:'mediatype:audio AND champeta'},
+    {label:"Bachata",aud:"bachata",ia:'mediatype:audio AND bachata'},
+    {label:"Tropical / Porro",aud:"tropical",ia:'mediatype:audio AND (tropical OR porro OR gaita OR merengue)'},
+    {label:"Despecho",aud:"despecho",ia:'mediatype:audio AND (despecho OR cantina OR carrilera)'},
+    {label:"Bolero",aud:"bolero",ia:'mediatype:audio AND (bolero OR romántica OR romantica)'},
+    {label:"Latino",aud:"latin",ia:'mediatype:audio AND (latin OR latino)'},
+    {label:"Colombia",aud:"colombia",ia:'mediatype:audio AND colombia'},
+    {label:"En español",aud:"español",ia:'mediatype:audio AND (español OR canción OR cancion OR spanish)'}
   ];
+  let curSrc="audius", curStation=0;
   const chips=$("#chips");
   STATIONS.forEach((s,i)=>{const b=document.createElement("button");b.className="chip";b.textContent=s.label;
-    b.onclick=()=>{selChip(i);search(s.q,s.label);};chips.appendChild(b);});
+    b.onclick=()=>{selChip(i);curStation=i;runStation();};chips.appendChild(b);});
   function selChip(i){[...chips.children].forEach((c,j)=>c.classList.toggle("on",j===i));}
+  function runStation(){const s=STATIONS[curStation];if(!s)return;
+    if(curSrc==="audius")searchAudius(s.aud,s.label);else search(s.ia,s.label);}
+  // selector de fuente
+  [...document.querySelectorAll(".srcb")].forEach(b=>{b.onclick=()=>{
+    curSrc=b.dataset.src;[...document.querySelectorAll(".srcb")].forEach(x=>x.classList.toggle("on",x===b));
+    $("#q").placeholder=curSrc==="audius"?"Buscar en Audius (artista o canción)…":"Buscar (vallenato, salsa, bolero…)";
+    if(curStation>=0)runStation();};});
 
   const fmt=s=>{if(!isFinite(s)||s<0)s=0;const m=Math.floor(s/60),x=Math.floor(s%60);return m+":"+(x<10?"0":"")+x;};
   const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -399,9 +456,35 @@
     $("#spin").hidden=!o.spin;$("#noteIcon").hidden=!!o.spin;$("#noteTxt").textContent=msg;$("#retry").hidden=!o.retry;}
   function showList(){$("#note").hidden=true;$("#list").hidden=false;}
 
-  // ================= EXPLORAR =================
+  // ================= AUDIUS (streaming libre y moderno) =================
+  let audHost=null;
+  async function audiusHost(){
+    if(audHost)return audHost;
+    const r=await fetch("https://api.audius.co");const j=await r.json();
+    const hs=(j.data||[]).filter(Boolean);
+    if(!hs.length)throw 0;audHost=hs[Math.floor(Math.random()*hs.length)];return audHost;
+  }
+  async function searchAudius(q,label){
+    lastQuery={src:"audius",q:q,label:label};currentListId=null;reqId++;const my=reqId;
+    $("#ctxhead").hidden=true;note("Buscando en Audius…",{spin:true});
+    try{
+      const host=await audiusHost();
+      const url=host+"/v1/tracks/search?query="+encodeURIComponent(q)+"&app_name=TocadiscosNube";
+      const r=await fetch(url);if(!r.ok)throw 0;const j=await r.json();if(my!==reqId)return;
+      const ts=(j.data||[]).filter(t=>t&&t.is_streamable!==false&&!t.is_delete);
+      if(!ts.length){note("Audius no trajo resultados para “"+(label||q)+"”. Prueba otro género o cambia a Archivo clásico.",{});return;}
+      tracks=ts.map(t=>({title:t.title||"(sin título)",artist:(t.user&&t.user.name)||"Audius",
+        cover:(t.artwork&&(t.artwork["480x480"]||t.artwork["150x150"]))||null,
+        url:host+"/v1/tracks/"+t.id+"/stream?app_name=TocadiscosNube",
+        duration:t.duration||0}));
+      cur=-1;buildQueue();showList();$("#ctxhead").hidden=false;$("#ctxTitle").textContent="Audius · "+(label||q);
+      renderTracks();playIndex(shuffle?queue[0]:0);
+    }catch(e){if(my!==reqId)return;note("No pude conectar con Audius. Revisa tu internet o usa Archivo clásico.",{retry:true});$("#retry").onclick=()=>searchAudius(q,label);}
+  }
+
+  // ================= EXPLORAR (Archivo clásico / Internet Archive) =================
   async function search(q,label){
-    lastQuery={q,label};currentListId=null;reqId++;const my=reqId;
+    lastQuery={src:"archivo",q:q,label:label};currentListId=null;reqId++;const my=reqId;
     $("#ctxhead").hidden=true;note("Buscando en la nube…",{spin:true});
     const url=IA+"/advancedsearch.php?q="+encodeURIComponent(q)+"&fl[]=identifier&fl[]=title&fl[]=creator&rows=40&page=1&output=json&sort[]=downloads+desc";
     try{
@@ -468,7 +551,7 @@
   function buildQueue(){const idx=tracks.map((_,i)=>i);
     if(shuffle)for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
     queue=idx;qpos=cur===-1?-1:queue.indexOf(cur);}
-  function playIndex(i){if(i==null||i<0||i>=tracks.length)return;cur=i;qpos=queue.indexOf(i);
+  function playIndex(i){if(i==null||i<0||i>=tracks.length)return;if(typeof ytStop==="function")ytStop();cur=i;qpos=queue.indexOf(i);
     audio.src=tracks[i].url;audio.play().catch(()=>{});paintNow();renderTracks();}
   function toggle(){if(cur===-1){if(tracks.length)playIndex(queue[0]!=null?queue[0]:0);return;}
     if(audio.paused)audio.play().catch(()=>{});else audio.pause();}
@@ -546,7 +629,7 @@
   $("#play").onclick=toggle;$("#next").onclick=()=>next(false);$("#prev").onclick=prev;
   $("#shuffle").onclick=()=>{shuffle=!shuffle;$("#shuffle").classList.toggle("on",shuffle);store.set("shuffle",shuffle);if(tracks.length)buildQueue();};
   $("#repeat").onclick=()=>{repeat=repeat==="off"?"all":repeat==="all"?"one":"off";const b=$("#repeat");b.classList.toggle("on",repeat!=="off");b.classList.toggle("repeat-one",repeat==="one");store.set("repeat",repeat);};
-  $("#back").onclick=()=>{if(lastQuery)search(lastQuery.q,lastQuery.label);};
+  $("#back").onclick=()=>{if(!lastQuery)return;if(lastQuery.src==="audius")searchAudius(lastQuery.q,lastQuery.label);else search(lastQuery.q,lastQuery.label);};
 
   // ---- lista (delegación: play + agregar/quitar) ----
   $("#list").addEventListener("click",e=>{
@@ -560,7 +643,8 @@
   $("#list").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){const r=e.target.closest(".row");if(r&&!e.target.closest(".rowact")){e.preventDefault();playIndex(+r.dataset.i);}}});
 
   // ---- buscar ----
-  function runSearch(){const v=$("#q").value.trim();if(!v)return;selChip(-1);search('mediatype:audio AND ('+v+')',v);}
+  function runSearch(){const v=$("#q").value.trim();if(!v)return;selChip(-1);curStation=-1;
+    if(curSrc==="audius")searchAudius(v,v);else search('mediatype:audio AND ('+v+')',v);}
   $("#goBtn").onclick=runSearch;$("#q").addEventListener("keydown",e=>{if(e.key==="Enter")runSearch();});
 
   // ---- volumen ----
@@ -627,10 +711,55 @@
   $("#newListName").addEventListener("keydown",e=>{if(e.key==="Enter")$("#newListBtn").click();});
 
   // ---- tabs ----
-  function setTab(t){$("#browseArea").hidden=t!=="explorar";$("#listasArea").hidden=t!=="listas";
-    $("#tabExplorar").classList.toggle("on",t==="explorar");$("#tabListas").classList.toggle("on",t==="listas");
-    if(t==="listas")renderCards();}
-  $("#tabExplorar").onclick=()=>setTab("explorar");$("#tabListas").onclick=()=>setTab("listas");
+  function setTab(t){
+    $("#browseArea").hidden=t!=="explorar";$("#listasArea").hidden=t!=="listas";$("#ytArea").hidden=t!=="youtube";
+    $("#tabExplorar").classList.toggle("on",t==="explorar");$("#tabListas").classList.toggle("on",t==="listas");$("#tabYt").classList.toggle("on",t==="youtube");
+    if(t==="listas")renderCards();
+    if(t==="youtube")ensureYT();
+  }
+  $("#tabExplorar").onclick=()=>setTab("explorar");$("#tabListas").onclick=()=>setTab("listas");$("#tabYt").onclick=()=>setTab("youtube");
+
+  // ---- YouTube (reproductor oficial) ----
+  let ytPlayer=null,ytReady=false,ytLoading=false,ytQueue=null;
+  const YT_GEN=[["Vallenato","vallenato mix"],["Salsa","salsa mix"],["Despecho","musica de despecho mix"],
+    ["Popular","musica popular colombiana mix"],["Reggaetón","reggaeton mix"],["Bolero","boleros mix"],
+    ["Cumbia","cumbia mix"],["Tropical","musica tropical bailable"]];
+  const ytq=$("#ytquick");
+  YT_GEN.forEach(g=>{const b=document.createElement("button");b.textContent=g[0];b.title='Buscar "'+g[1]+'" en YouTube';
+    b.onclick=()=>window.open("https://www.youtube.com/results?search_query="+encodeURIComponent(g[1]),"_blank","noopener");
+    ytq.appendChild(b);});
+  function ensureYT(cb){
+    if(ytReady){if(cb)cb();return;}
+    if(cb)ytQueue=cb;
+    if(ytLoading)return;ytLoading=true;
+    window.onYouTubeIframeAPIReady=function(){
+      ytPlayer=new YT.Player("ytplayer",{host:"https://www.youtube.com",
+        playerVars:{playsinline:1,rel:0,modestbranding:1},
+        events:{onReady:function(){ytReady=true;if(ytQueue){const c=ytQueue;ytQueue=null;c();}},onStateChange:onYtState}});
+    };
+    const tag=document.createElement("script");tag.src="https://www.youtube.com/iframe_api";document.body.appendChild(tag);
+  }
+  function onYtState(e){
+    if(e.data===1||e.data===3){audio.pause();$("#ytToggle").textContent="⏸";$("#ytph").hidden=true;}
+    else $("#ytToggle").textContent="▶";
+    try{const d=ytPlayer.getVideoData&&ytPlayer.getVideoData();$("#ytTitle").textContent=(d&&d.title)||"";}catch(err){}
+  }
+  function parseYT(u){u=(u||"").trim();if(!u)return{};
+    let list=null;const ml=u.match(/[?&]list=([A-Za-z0-9_-]+)/);if(ml)list=ml[1];
+    let v=null;const mv=u.match(/[?&]v=([A-Za-z0-9_-]{11})/)||u.match(/youtu\.be\/([A-Za-z0-9_-]{11})/)||u.match(/\/shorts\/([A-Za-z0-9_-]{11})/)||u.match(/embed\/([A-Za-z0-9_-]{11})/);
+    if(mv)v=mv[1];
+    if(!v&&!list){if(/^[A-Za-z0-9_-]{11}$/.test(u))v=u;else if(/^(PL|UU|OL|RD|LL|FL)[A-Za-z0-9_-]+$/.test(u))list=u;}
+    return{video:v,list:list};}
+  function playYT(){const p=parseYT($("#ytUrl").value);
+    if(!p.video&&!p.list){toast("Pega un enlace válido de YouTube");return;}
+    audio.pause();$("#ytph").hidden=true;
+    ensureYT(function(){if(p.list)ytPlayer.loadPlaylist({list:p.list,listType:"playlist",index:0});else ytPlayer.loadVideoById(p.video);});}
+  $("#ytPlayBtn").onclick=playYT;
+  $("#ytUrl").addEventListener("keydown",e=>{if(e.key==="Enter")playYT();});
+  $("#ytToggle").onclick=()=>{if(!ytPlayer)return;const s=ytPlayer.getPlayerState&&ytPlayer.getPlayerState();if(s===1)ytPlayer.pauseVideo();else ytPlayer.playVideo();};
+  $("#ytPrev").onclick=()=>{if(ytPlayer&&ytPlayer.previousVideo)ytPlayer.previousVideo();};
+  $("#ytNext").onclick=()=>{if(ytPlayer&&ytPlayer.nextVideo)ytPlayer.nextVideo();};
+  function ytStop(){if(ytPlayer&&ytPlayer.pauseVideo){try{ytPlayer.pauseVideo();}catch(e){}}}
 
   // ---- teclado ----
   document.addEventListener("keydown",e=>{
@@ -660,7 +789,7 @@
 
   // ---- arranque ----
   setupMediaSession();
-  selChip(0);search(STATIONS[0].q,STATIONS[0].label);
+  curSrc="audius";selChip(0);curStation=0;runStation();
 })();
 </script>
 <script>
