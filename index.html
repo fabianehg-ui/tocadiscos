@@ -486,16 +486,52 @@
       img.onerror=function(){art.innerHTML='<span class="note">♪</span>';};art.appendChild(img);}
     else art.innerHTML='<span class="note">♪</span>';
     const fb=$("#fav");fb.classList.toggle("on",isFav());$("#favIcon").innerHTML=isFav()?I.heartf:I.heart;
+    updateMediaMeta();
+  }
+
+  // ---- Media Session: controles en pantalla bloqueada ----
+  function setupMediaSession(){
+    if(!("mediaSession" in navigator))return;
+    const ms=navigator.mediaSession;
+    const set=(a,fn)=>{try{ms.setActionHandler(a,fn);}catch(e){}};
+    set("play",()=>audio.play().catch(()=>{}));
+    set("pause",()=>audio.pause());
+    set("previoustrack",()=>prev());
+    set("nexttrack",()=>next(false));
+    set("seekbackward",d=>{const s=(d&&d.seekOffset)||10;audio.currentTime=Math.max(0,audio.currentTime-s);});
+    set("seekforward",d=>{const s=(d&&d.seekOffset)||10;audio.currentTime=Math.min(audio.duration||1e9,audio.currentTime+s);});
+    set("seekto",d=>{if(d.fastSeek&&"fastSeek"in audio){audio.fastSeek(d.seekTime);return;}audio.currentTime=d.seekTime;});
+    set("stop",()=>audio.pause());
+  }
+  function updateMediaMeta(){
+    if(!("mediaSession"in navigator))return;
+    const t=tracks[cur];
+    if(t&&"MediaMetadata"in window){
+      navigator.mediaSession.metadata=new MediaMetadata({
+        title:t.title||"", artist:t.artist||"", album:"Tocadiscos Nube",
+        artwork:t.cover?[{src:t.cover,sizes:"512x512",type:"image/jpeg"}]:[]
+      });
+    }
+  }
+  function updatePos(){
+    if(!("mediaSession"in navigator)||!navigator.mediaSession.setPositionState)return;
+    if(!audio.duration||!isFinite(audio.duration))return;
+    try{navigator.mediaSession.setPositionState({duration:audio.duration,
+      playbackRate:audio.playbackRate||1,position:Math.min(audio.currentTime,audio.duration)});}catch(e){}
   }
 
   // ---- audio ----
-  audio.addEventListener("play",()=>{document.body.classList.add("playing");$("#play").innerHTML=I.pause;});
-  audio.addEventListener("pause",()=>{document.body.classList.remove("playing");$("#play").innerHTML=I.play;});
+  audio.addEventListener("play",()=>{document.body.classList.add("playing");$("#play").innerHTML=I.pause;
+    if("mediaSession"in navigator)navigator.mediaSession.playbackState="playing";updatePos();});
+  audio.addEventListener("pause",()=>{document.body.classList.remove("playing");$("#play").innerHTML=I.play;
+    if("mediaSession"in navigator)navigator.mediaSession.playbackState="paused";});
   audio.addEventListener("ended",()=>next(true));
-  audio.addEventListener("loadedmetadata",()=>{$("#dur").textContent=fmt(audio.duration);
+  audio.addEventListener("loadedmetadata",()=>{$("#dur").textContent=fmt(audio.duration);updatePos();
     if(tracks[cur]&&!tracks[cur].duration){tracks[cur].duration=audio.duration;const r=$('#list .row[data-i="'+cur+'"]');if(r)r.querySelector(".d").textContent=fmt(audio.duration);}});
+  let _posT=0;
   audio.addEventListener("timeupdate",()=>{const d=audio.duration||0,p=d?audio.currentTime/d:0;
-    $("#fill").style.width=(p*100)+"%";$("#knob").style.left=(p*100)+"%";$("#cur").textContent=fmt(audio.currentTime);$("#bar").setAttribute("aria-valuenow",Math.round(p*100));});
+    $("#fill").style.width=(p*100)+"%";$("#knob").style.left=(p*100)+"%";$("#cur").textContent=fmt(audio.currentTime);$("#bar").setAttribute("aria-valuenow",Math.round(p*100));
+    const now=Date.now();if(now-_posT>1000){_posT=now;updatePos();}});
   audio.addEventListener("error",()=>{if(audio.src)next(true);});
 
   // ---- seek ----
@@ -623,6 +659,7 @@
   vol.value=store.get("vol","0.9");applyVol();
 
   // ---- arranque ----
+  setupMediaSession();
   selChip(0);search(STATIONS[0].q,STATIONS[0].label);
 })();
 </script>
